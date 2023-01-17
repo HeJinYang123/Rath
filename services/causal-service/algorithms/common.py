@@ -44,9 +44,10 @@ IDepTestItems = {
     # 'mc_fisherz': ('missing correction fisher-z', "Fisher-Z's test with test-wise deletion and missingness correction")
 }
 ISELFBooster = {
-    'gbtree': '默认为gbtree，非线性回归方法',
-    'gblinear': '可选值gblinear，线性回归方法',
-    'lm': '可选值lm，线性回归方法',
+    'svr': 'SVR',
+    'gbtree': 'gbtree，nonlinear method',
+    'gblinear': 'gblinear，linear method',
+    'lm': 'linear model',
 }
 ISELFScoreType = {
     'bic': 'BIC',

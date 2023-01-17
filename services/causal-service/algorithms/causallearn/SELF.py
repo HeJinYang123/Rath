@@ -21,7 +21,6 @@ import rpy2.robjects.packages as rpackages
 from rpy2.robjects import r
 from rpy2.robjects import pandas2ri
 pandas2ri.activate()
-rpackages.importr('SELF')
 rpackages.importr('xgboost')
 r('xgb.set.config')(verbosity=0)
 rpy2.robjects.r("warnings('off')")
@@ -66,10 +65,6 @@ class SELFParams(OptionalParams, title="SELF"):
         default=20, title="XGBoost-nrounds",  # "Alpha",
         description="XGBoost中的nrounds参数，最大迭代次数",
         gt=0, le=30
-    )
-    use_R: Optional[bool] = Field(
-        default=False, title="Use R language as lib",
-        description="调用R语言",
     )
     use_py_package: Optional[bool] = Field(
         default=False, title="Use Python xgboost",
@@ -120,39 +115,30 @@ class SELF(AlgoInterface):
 
         params.__dict__['cache_path'] = None  # '/tmp/causal/pc.json'
 
-        print(f"array: {array[:5]}")
-        print(f"fields: {self.focusedFields}")
+        # print(f"array: {array[:5]}")
+        # print(f"fields: {self.focusedFields}")
         t_s = time.time_ns()
         if bgKnowledgesPag and len(bgKnowledgesPag) > 0:
             f_ind = {fid: i for i, fid in enumerate(focusedFields)}
             print(f"f_ind: {f_ind}")
             init_graph, rules = self.constructBkGraph(bgKnowledgesPag=bgKnowledgesPag, f_ind=f_ind)
-            if params.use_R:
-                fhc = r('fhc')
-                G = fhc(array, init_graph, boost=params.booster, gamma=params.gamma, nrounds=params.nrounds,
-                        score_type=params.score_type).tolist()
-            else:
-                fasthillclimb = FastHillClimb(array, init_graph, rules, score_type=params.score_type,
-                                              booster=params.booster, gamma=params.gamma, max_iter=params.nrounds,
-                                              use_py_package=params.use_py_package)
-                G = fasthillclimb.fit().tolist()
+            fasthillclimb = FastHillClimb(array, init_graph, rules, score_type=params.score_type,
+                                          booster=params.booster, gamma=params.gamma, max_iter=params.nrounds,
+                                          use_py_package=params.use_py_package)
+            G = fasthillclimb.fit().tolist()
         else:
-            if params.use_R:
-                fhc = r('fhc')
-                G = fhc(array, boost=params.booster, gamma=params.gamma, nrounds=params.nrounds,
-                        score_type=params.score_type).tolist()
-            else:
-                fasthillclimb = FastHillClimb(array, score_type=params.score_type,
-                                              booster=params.booster, gamma=params.gamma, max_iter=params.nrounds,
-                                              use_py_package=params.use_py_package)
-                G = fasthillclimb.fit().tolist()
-        print(f"SELF time: {(time.time_ns() - t_s) / 1e6}ms")
+            fasthillclimb = FastHillClimb(array, score_type=params.score_type,
+                                          booster=params.booster, gamma=params.gamma, max_iter=params.nrounds,
+                                          use_py_package=params.use_py_package)
+            G = fasthillclimb.fit().tolist()
+        # print(f"SELF time: {(time.time_ns() - t_s) / 1e6}ms")
         l = G
         for i in range(len(l)):
             for j in range(len(l[i])):
                 if l[j][i] != 0:
                     if l[i][j] == 0:
-                        l[i][j] = -l[j][i]
+                        l[i][j] = l[j][i]
+                        l[j][i] = -l[i][j]
                 if l[i][j] == l[j][i] == 1:
                     l[i][j] = l[j][i] = 2  # circle
         print(np.array(l))

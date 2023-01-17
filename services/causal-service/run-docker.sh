@@ -5,7 +5,7 @@ cur_dir=`dirname $0`
 dname=run-causal-server
 cd $cur_dir
 . $cur_dir/fetch.sh && \
-docker build -t causalserver .
+docker build -t causal-server .
 docker container ls -a -f name=${dname} | grep ${dname}
 if [ $? -eq 0 ] ; then
 docker stop ${dname}

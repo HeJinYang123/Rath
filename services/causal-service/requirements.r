@@ -1,1 +1,1 @@
-install.packages('SELF')
+install.packages('xgboost')

@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import Dict, List, Tuple, Optional, Union, Literal
 import numpy as np
 import pandas as pd
+import sklearn
 
 from sklearn.neighbors import KernelDensity
 from sklearn.linear_model import LinearRegression
@@ -75,8 +76,14 @@ def updateScore(data, graph, NodeScore, nodes, score_type="bic", bw="nrd0",
                                              gamma=gamma, nrounds=nrounds)
             else:
                 if booster == "lm":
-                    model = LinearRegression(fit_intercept=True, normalize=True)
+                    model = LinearRegression()
                     model.fit(x, y)
+                elif booster == "svr":
+                    t1 = time.time_ns()
+                    model = sklearn.svm.SVR(kernel='rbf', degree=5, C=100, max_iter=2000)
+                    model.fit(x, y)
+                    # print(f"svr time: {(time.time_ns()-t1)/1e6} ms")
+                    print(f"R2: {sklearn.metrics.r2_score(y, model.predict(x))}")
                 else:
                     # fit_ts = time.time_ns()
                     if use_py_package:
@@ -91,7 +98,7 @@ def updateScore(data, graph, NodeScore, nodes, score_type="bic", bw="nrd0",
                     else:
                         model = r("xgboost")(data=x, label=y, verbose=0, nrounds=nrounds, gamma=gamma, booster=booster)
                     # print(f"xgb time: {(time.time_ns() - fit_ts) / 1e6}ms")
-            if booster == "lm":
+            if booster == "lm" or booster == "svr":
                 N = y - model.predict(x)
             else:
                 if use_py_package:
@@ -148,7 +155,7 @@ class FastHillClimb:
                  min_increase=0.01, score_type="bic",
                  bw="nrd0", booster="gbtree", gamma=10, max_iter: int = 30, use_py_package=False):
         assert (score_type in ["bic", "aic", "log"]), "score_type must be in ['bic', 'aic', 'log']"
-        assert (booster in ["gbtree", "gblinear", "lm"]), "booster must be in ['gbtree', 'gblinear', 'lm']"
+        # assert (booster in ["gbtree", "gblinear", "lm"]), "booster must be in ['gbtree', 'gblinear', 'lm']"
         if Graph is not None:
             assert (Data.shape[1] == Graph.shape[0] == Graph.shape[1]), "Data and Graph shape must be matched"
 

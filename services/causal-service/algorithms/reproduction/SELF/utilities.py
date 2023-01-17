@@ -6,7 +6,7 @@ import pandas as pd
 
 def get_parents(graph: np.ndarray, node):
     """
-    graph[i][j] == 1 means i <- j
+    graph[i][j] == 1 means i -> j
     """
     # print(f"------------np.where(graph[:, node] == 1)\n {np.where(graph[:][node] == 1)}")
     # print(f"node: {node} \n {graph}")
@@ -27,7 +27,7 @@ def dfsCircuit(G: np.ndarray, current):
     for i in range(G.shape[0]):
         if G[current][i] == 1:
             if dfsCircuit(G, i):
-                return False
+                return True
     vis[current] = 0
     return False
 
@@ -52,7 +52,6 @@ def get_vicinity_G(graph: np.ndarray, rules: np.ndarray = None):
             if i == j:
                 continue
             if rules is not None and rules[j][i] != 0:
-                print(f"from {i} to {j} is not allowed")
                 continue
             G = copy.deepcopy(graph)
             if G[i][j] == 1:
